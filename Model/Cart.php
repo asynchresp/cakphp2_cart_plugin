@@ -85,7 +85,10 @@ class Cart extends CartAppModel {
 			'contain' => array(
 				'CartsItem'),
 			'conditions' => array(
-				$this->alias . '.user_id' => $userId)));
+				$this->alias . '.user_id' => $userId,
+				$this->alias . '.active' => true
+			)
+		));
 
 		if (!empty($result)) {
 			return $result;
@@ -103,6 +106,7 @@ class Cart extends CartAppModel {
 				'name' => __d('cart', 'My cart'))));
 
 		$result[$this->alias]['id'] = $this->getLastInsertId();
+		$result['CartsItem'] = array();
 		return $result;
 	}
 
@@ -115,16 +119,11 @@ class Cart extends CartAppModel {
 	public function view($cartId = null, $userId = null) {
 		$result = $this->find('first', array(
 			'conditions' => array(
-				$this->alias . '.user_id' => $userId)));
-
-		$this->create();
-		$result = $this->save(array(
-			$this->alias => array(
-				'user_id' => $userId,
-				'active' => 1,
-				'name' => __d('cart', 'My cart'))));
-		$result[$this->alias]['id'] = $this->id;
-		$result['CartItems'] = array();
+				$this->alias . '.user_id' => $userId,
+				$this->alias . '.id' => $cartId
+			),
+			'contain' => array('CartsItem')
+		));
 		return $result;
 	}
 
@@ -158,7 +157,7 @@ class Cart extends CartAppModel {
 	}
 
 /**
- * Checks if one of the items in the cart is not flagged as a virtual item and 
+ * Checks if one of the items in the cart is not flagged as a virtual item and
  * requires by this shipping.
  *
  * Virtual means that it can be a download or a service or whatever else.
@@ -211,7 +210,7 @@ class Cart extends CartAppModel {
 	}
 
 /**
- * 
+ *
  */
 	public function applyDiscounts($cartData) {
 		CakeEventManager::dispatch(new CakeEvent('Cart.applyDiscounts', $this, array($cartData)));
@@ -246,7 +245,7 @@ class Cart extends CartAppModel {
  * from the non-logged in user into the users database cart.
  *
  * @todo finish me
- * @return 
+ * @return
  */
 	public function mergeItems($cartId, $cartItems) {
 		$dbItems = $this->CartsItem->find('all', array(
@@ -270,7 +269,7 @@ class Cart extends CartAppModel {
 	}
 
 /**
- * 
+ *
  */
 	public function confirmCheckout($data) {
 		return (isset($data[$this->alias]['confirm_checkout']) && $data[$this->alias]['confirm_checkout'] == 1);
